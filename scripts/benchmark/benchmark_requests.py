@@ -8,9 +8,6 @@ from pathlib import Path
 from tqdm.auto import tqdm
 from util import make_request
 
-RESULTS_DIR = Path(__file__).parent / "results"
-RESULTS_DIR.mkdir(exist_ok=True)
-
 if __name__ == "__main__":
     """Main function to benchmark the PESUAuth API.
 
@@ -129,6 +126,11 @@ if __name__ == "__main__":
                 success.append(0)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    results_dir = Path("benchmark") / "results"
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True, exist_ok=True)
+
     if output:
         outfile = Path(output)
     else:
@@ -140,18 +142,11 @@ if __name__ == "__main__":
             f"_[execution_mode={'par' if parallel else 'seq'}]"
             ".csv"
         )
-        outfile = RESULTS_DIR / filename
+        outfile = results_dir / filename
 
-    outfile.parent.mkdir(parents=True, exist_ok=True)
-
-    """outfile = (
-        output
-        if output
-        else (
-            f"benchmark_[num_requests={num_requests}]_[max_workers={max_workers}]_"
-            f"[parallel={parallel}]_[route={route}]_[timeout={timeout}].csv"
-        )
-    )"""
+    parent_dir = outfile.parent
+    if not parent_dir.exists():
+        parent_dir.mkdir(parents=True, exist_ok=True)
 
     with open(
         outfile,
@@ -160,7 +155,7 @@ if __name__ == "__main__":
         f.write("status,time\n")
         f.writelines(f"{s},{t}\n" for s, t in zip(success, times, strict=False))
 
-    print(f"Results saved to the following directory: {outfile}")
+    print(f"Results saved to: {outfile}")
     print(f"Benchmark completed. Successful requests: {sum(success)} out of {len(success)}")
     print(f"Average time per request: {sum(times) / len(times):.2f} seconds")
     print(f"Total time taken: {sum(times):.2f} seconds")
