@@ -1,18 +1,26 @@
 """FastAPI Entrypoint for PESUAuth API."""
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import datetime
 import logging
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from importlib.metadata import version
+from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
-import pytz
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.requests import Request
 from fastapi.responses import JSONResponse, RedirectResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from fastapi.requests import Request
+
 from pydantic import ValidationError
 
 from app.docs import authenticate_docs, health_docs, readme_docs
@@ -20,17 +28,14 @@ from app.exceptions.base import PESUAcademyError
 from app.models import RequestModel, ResponseModel
 from app.pesu import PESUAcademy
 
-IST = pytz.timezone("Asia/Kolkata")
+IST = ZoneInfo("Asia/Kolkata")
 CSRF_TOKEN_REFRESH_INTERVAL_SECONDS = 45 * 60
-CSRF_TOKEN_REFRESH_LOCK = asyncio.Lock()
 
 
-async def _refresh_csrf_token_with_lock() -> None:
-    """Refresh the CSRF token with a lock."""
-    logging.debug("Refreshing unauthenticated CSRF token...")
-    async with CSRF_TOKEN_REFRESH_LOCK:
-        await pesu_academy.prefetch_client_with_csrf_token()
-        logging.info("Unauthenticated CSRF token refreshed successfully.")
+async def _refresh_csrf_token() -> None:
+    """Refresh the cached unauthenticated CSRF token and client."""
+    await pesu_academy.prefetch_client_with_csrf_token()
+    logging.info("Unauthenticated CSRF token refreshed successfully.")
 
 
 async def _csrf_token_refresh_loop() -> None:
@@ -38,7 +43,7 @@ async def _csrf_token_refresh_loop() -> None:
     while True:
         try:
             logging.debug("Refreshing unauthenticated CSRF token...")
-            await _refresh_csrf_token_with_lock()
+            await _refresh_csrf_token()
         except Exception:
             logging.exception("Failed to refresh unauthenticated CSRF token in the background.")
         await asyncio.sleep(CSRF_TOKEN_REFRESH_INTERVAL_SECONDS)
@@ -76,7 +81,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="PESUAuth API",
     description="A simple and lightweight API to authenticate PESU credentials using PESU Academy",
-    version="2.1.0",
+    version=version("pesu-auth"),
     docs_url="/",
     lifespan=lifespan,
     openapi_tags=[
@@ -100,8 +105,13 @@ pesu_academy = PESUAcademy()
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handler for request validation errors."""
-    logging.exception("Request data could not be validated.")
     errors = exc.errors()
+    # Log only the shape of the failure, never the submitted values. Each entry from `errors()`
+    # carries an "input" key which, for a missing required field, is the *entire request body* --
+    # so logging it verbatim would write the user's password to the logs in plaintext.
+    safe_errors = [{"type": e.get("type"), "loc": e.get("loc"), "msg": e.get("msg")} for e in errors]
+    # A malformed request is the caller's mistake, not a server fault, so no stack trace
+    logging.warning(f"Request data could not be validated: {safe_errors}")
     message = "; ".join([f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in errors])
     return JSONResponse(
         status_code=400,
@@ -116,7 +126,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(PESUAcademyError)
 async def pesu_exception_handler(request: Request, exc: PESUAcademyError) -> JSONResponse:
     """Handler for PESUAcademy specific errors."""
-    logging.exception(f"PESUAcademyError: {exc.message}")
+    # Severity follows the status code. A 4xx is an expected outcome -- a wrong password is the
+    # API working correctly -- and logging one at ERROR with a traceback both buries real faults
+    # and pages whoever alerts on the error rate. Only 5xx gets a stack trace.
+    if exc.status_code < 500:
+        logging.warning(f"{type(exc).__name__}: {exc.message}")
+    else:
+        logging.exception(f"{type(exc).__name__}: {exc.message}")
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -180,7 +196,7 @@ async def readme() -> RedirectResponse:
     responses=authenticate_docs.response_examples,
     tags=["Authentication"],
 )
-async def authenticate(payload: RequestModel, background_tasks: BackgroundTasks) -> JSONResponse:
+async def authenticate(payload: RequestModel) -> JSONResponse:
     """Authenticate a user using their PESU credentials via the PESU Academy service.
 
     Request body parameters:
@@ -207,14 +223,12 @@ async def authenticate(payload: RequestModel, background_tasks: BackgroundTasks)
             fields=fields,
         ),
     )
-    # Prefetch a new client with an unauthenticated CSRF token for the next request
-    background_tasks.add_task(_refresh_csrf_token_with_lock)
 
     # Validate the response
     try:
         authentication_result = ResponseModel.model_validate(authentication_result)
         logging.info(f"Returning auth result for user={username}: {authentication_result}")
-        authentication_result = authentication_result.model_dump(exclude_none=True)
+        authentication_result = authentication_result.model_dump(by_alias=True, exclude_none=True)
         authentication_result["timestamp"] = current_time.isoformat()
         return JSONResponse(
             status_code=200,

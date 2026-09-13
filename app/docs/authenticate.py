@@ -69,7 +69,7 @@ authenticate_docs = ApiDocs(
                                     "section": "C",
                                     "email": "johndoe@gmail.com",
                                     "phone": "1234567890",
-                                    "campus_code": 1,
+                                    "campusCode": 1,
                                     "campus": "RR",
                                 },
                             },

@@ -5,9 +5,9 @@
 [![Lint](https://github.com/pesu-dev/auth/actions/workflows/lint.yaml/badge.svg)](https://github.com/pesu-dev/auth/actions/workflows/lint.yaml)
 [![Deploy](https://github.com/pesu-dev/auth/actions/workflows/deploy-prod.yaml/badge.svg)](https://github.com/pesu-dev/auth/actions/workflows/deploy-prod.yaml)
 
-[![Docker Automated build](https://img.shields.io/docker/automated/aditeyabaral/pesu-auth?logo=docker)](https://hub.docker.com/r/aditeyabaral/pesu-auth/builds)
-[![Docker Image Version (tag)](https://img.shields.io/docker/v/aditeyabaral/pesu-auth/latest?logo=docker&label=build%20commit)](https://hub.docker.com/r/aditeyabaral/pesu-auth/tags)
-[![Docker Image Size (tag)](https://img.shields.io/docker/image-size/aditeyabaral/pesu-auth/latest?logo=docker)](https://hub.docker.com/r/aditeyabaral/pesu-auth)
+[![Docker Automated build](https://img.shields.io/docker/automated/pesudev/pesu-auth?logo=docker)](https://hub.docker.com/r/pesudev/pesu-auth/builds)
+[![Docker Image Version (tag)](https://img.shields.io/docker/v/pesudev/pesu-auth/latest?logo=docker&label=build%20commit)](https://hub.docker.com/r/pesudev/pesu-auth/tags)
+[![Docker Image Size (tag)](https://img.shields.io/docker/image-size/pesudev/pesu-auth/latest?logo=docker)](https://hub.docker.com/r/pesudev/pesu-auth)
 
 A simple and lightweight API to authenticate PESU credentials using PESU Academy.
 
@@ -16,8 +16,8 @@ returns the user's profile information. No personal data is stored.
 
 ## PESUAuth LIVE Deployment
 
-* You can access the PESUAuth API endpoints [here](https://pesu-auth.onrender.com/).
-* You can view the health status of the API on the [PESUAuth Health Dashboard](https://xzlk85cp.status.cron-job.org/).
+- You can access the PESUAuth API endpoints [here](https://pesu-auth.onrender.com/).
+- You can view the health status of the API on the [PESUAuth Health Dashboard](https://xzlk85cp.status.cron-job.org/).
 
 #### API Status
 
@@ -30,12 +30,14 @@ returns the user's profile information. No personal data is stored.
 > All timestamps are in UTC.
 
 > [!WARNING]
-> The live version is hosted on a free tier server. As a result, you might experience higher latency compared to a local
-> deployment.
+> The live version is hosted on a free tier server located in the United States. As a result, you *might* experience higher latencies and slower response times, compared to running the API locally or on a server closer to your location.
 
 ## How to run PESUAuth locally
 
 Running the PESUAuth API locally is simple. Clone the repository and follow the steps below to get started.
+
+> [!TIP]
+> We recommend running the API locally using Docker for ease of use, the best performance, and lowest latency.
 
 ### Running with Docker
 
@@ -44,54 +46,59 @@ following commands to start the API.
 
 1. Build the Docker image either from the source code or pull the pre-built image from Docker Hub.
 
-    1. You can build the Docker image from the source code by running the following command in the root directory of
-       the repository.
-       ```bash
-       docker build . --tag pesu-auth
-       ```
+   1. You can build the Docker image from the source code by running the following command in the root directory of
+      the repository.
 
-    2. You can also pull the pre-built Docker image
-       from [Docker Hub](https://hub.docker.com/repository/docker/aditeyabaral/pesu-auth/general) by running the
-       following command:
-       ```bash
-       docker pull aditeyabaral/pesu-auth:latest
-       ```
+      ```bash
+      docker build . --tag pesu-auth
+      ```
 
-2. Run the Docker container
-    ```bash
-    docker run --name pesu-auth -d -p 5000:5000 pesu-auth
-    # If you pulled the pre-built image, use the following command instead:
-    docker run --name pesu-auth -d -p 5000:5000 aditeyabaral/pesu-auth:latest
-    ```
+   1. You can also pull the pre-built Docker image
+      from [Docker Hub](https://hub.docker.com/repository/docker/pesudev/pesu-auth/general) by running the
+      following command:
 
-3. Access the API at `http://localhost:5000/`
+      ```bash
+      docker pull pesudev/pesu-auth:latest
+      ```
+
+1. Run the Docker container
+
+   ```bash
+   docker run --name pesu-auth -d -p 5000:5000 pesu-auth
+   # If you pulled the pre-built image, use the following command instead:
+   docker run --name pesu-auth -d -p 5000:5000 pesudev/pesu-auth:latest
+   ```
+
+1. Access the API at `http://localhost:5000/`
 
 ### Running without Docker
 
-If you don't have Docker installed, you can run the API natively. Ensure you have Python 3.11 or higher
+If you don't have Docker installed, you can run the API natively. Ensure you have Python 3.14 or higher
 installed on your system. We recommend using a package manager like [`uv`](https://docs.astral.sh/uv/) to manage
 dependencies.
 
 1. Create a virtual environment using and activate it. Then, install the dependencies using the following commands.
-    ```bash
-    uv venv --python=3.11
-    source .venv/bin/activate
-    uv sync
-    ```
 
-2. Run the API using the following command.
-    ```bash
-    uv run python -m app.app
-    ```
+   ```bash
+   uv venv --python=3.14
+   source .venv/bin/activate
+   uv sync
+   ```
 
-3. Access the API as previously mentioned on `http://localhost:5000/`
+1. Run the API using the following command.
+
+   ```bash
+   uv run python -m app.app
+   ```
+
+1. Access the API as previously mentioned on `http://localhost:5000/`
 
 ## How to use the PESUAuth API
 
 The API provides multiple endpoints for authentication, documentation, and monitoring.
 
 | **Endpoint**    | **Method** | **Description**                                        |
-|-----------------|------------|--------------------------------------------------------|
+| --------------- | ---------- | ------------------------------------------------------ |
 | `/`             | `GET`      | Serves the interactive API documentation (Swagger UI). |
 | `/authenticate` | `POST`     | Authenticates a user using their PESU credentials.     |
 | `/health`       | `GET`      | A health check endpoint to monitor the API's status.   |
@@ -105,7 +112,7 @@ object, with the user's profile information if requested.
 #### Request Parameters
 
 | **Parameter** | **Optional** | **Type**    | **Default** | **Description**                                                                                 |
-|---------------|--------------|-------------|-------------|-------------------------------------------------------------------------------------------------|
+| ------------- | ------------ | ----------- | ----------- | ----------------------------------------------------------------------------------------------- |
 | `username`    | No           | `str`       |             | The user's SRN or PRN                                                                           |
 | `password`    | No           | `str`       |             | The user's password                                                                             |
 | `profile`     | Yes          | `boolean`   | `False`     | Whether to fetch profile information                                                            |
@@ -118,7 +125,7 @@ profile data was requested, the response's `profile` key will store a dictionary
 **On an unsuccessful sign-in, this field will not exist**.
 
 | **Field**   | **Type**        | **Description**                                                          |
-|-------------|-----------------|--------------------------------------------------------------------------|
+| ----------- | --------------- | ------------------------------------------------------------------------ |
 | `status`    | `boolean`       | A flag indicating whether the overall request was successful             |
 | `profile`   | `ProfileObject` | A nested map storing the profile information, returned only if requested |
 | `message`   | `str`           | A message that provides information corresponding to the status          |
@@ -129,19 +136,19 @@ profile data was requested, the response's `profile` key will store a dictionary
 This object contains the user's profile information, which is returned only if the `profile` parameter is set to `True`.
 If the authentication fails, this field will not be present in the response.
 
-| **Field**     | **Description**                                        |
-|---------------|--------------------------------------------------------|
-| `name`        | Name of the user                                       |
-| `prn`         | PRN of the user                                        |
-| `srn`         | SRN of the user                                        |
-| `program`     | Academic program that the user is enrolled into        |
-| `branch`      | Complete name of the branch that the user is pursuing  |
-| `semester`    | Current semester that the user is in                   |
-| `section`     | Section of the user                                    |
-| `email`       | Email address of the user registered with PESU         |
-| `phone`       | Phone number of the user registered with PESU          |
-| `campus_code` | The integer code of the campus (1 for RR and 2 for EC) |
-| `campus`      | Abbreviation of the user's campus name                 |
+| **Field**    | **Description**                                        |
+| ------------ | ------------------------------------------------------ |
+| `name`       | Name of the user                                       |
+| `prn`        | PRN of the user                                        |
+| `srn`        | SRN of the user                                        |
+| `program`    | Academic program that the user is enrolled into        |
+| `branch`     | Complete name of the branch that the user is pursuing  |
+| `semester`   | Current semester that the user is in                   |
+| `section`    | Section of the user                                    |
+| `email`      | Email address of the user registered with PESU         |
+| `phone`      | Phone number of the user registered with PESU          |
+| `campusCode` | The integer code of the campus (1 for RR and 2 for EC) |
+| `campus`     | Abbreviation of the user's campus name                 |
 
 ### `/health`
 
@@ -150,11 +157,11 @@ does not take any request parameters.
 
 #### Response Object
 
-| **Field** | **Type**   | **Description**                                                   |
-|-----------|------------|-------------------------------------------------------------------|
-| `status`  | `str`      | `true` if healthy, `false` if there was an error                  |
-| `message` | `str`      | "ok" if healthy, error message otherwise                          |
-| `timestamp` | `string` | A timezone offset timestamp indicating the time of authentication |
+| **Field**   | **Type**   | **Description**                                                     |
+| ----------- | ---------- | ------------------------------------------------------------------- |
+| `status`    | `boolean`  | `true` if healthy, `false` if there was an error                    |
+| `message`   | `str`      | "ok" if healthy, error message otherwise                            |
+| `timestamp` | `datetime` | A timezone offset timestamp indicating the time of the health check |
 
 ### `/readme`
 
@@ -196,7 +203,7 @@ print(response.json())
     "section": "NA",
     "email": "johnnyblaze@gmail.com",
     "phone": "1234567890",
-    "campus_code": 1,
+    "campusCode": 1,
     "campus": "RR"
   },
   "message": "Login successful.",
